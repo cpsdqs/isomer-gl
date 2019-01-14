@@ -1,12 +1,13 @@
-const Shape = IsomerGL.Shape;
-const Point = IsomerGL.Point;
-const Color = IsomerGL.Color;
-const Path = IsomerGL.Path;
+const Shape = Isomer.Shape;
+const Point = Isomer.Point;
+const Color = Isomer.Color;
+const Path = Isomer.Path;
 
-const iso = new IsomerGL(document.querySelector('#art'));
+const iso = new Isomer(document.querySelector('#c'));
+const isoGL = new IsomerGL(document.querySelector('#cgl'));
 
 const startTime = Date.now();
-const draw = function () {
+const drawFrame = function (iso, isGL) {
     let time = (Date.now() - startTime) / 1000;
 
     // random snippets pasted from https://jdan.github.io/isomer
@@ -32,10 +33,51 @@ const draw = function () {
 
     iso.add(Shape.Prism(new Point(1, 3.5, 3), 4, 1, 1).rotateZ(new Point(3, 4, 3), time));
 
-    iso.draw();
+    let text;
+    if (isGL) {
+        text = [
+            '-xx--x---',
+            'x----x---',
+            'x--x-x---',
+            '-xxx-xxxx',
+        ];
+    } else {
+        text = [
+            '-----x------xx----x',
+            '-xx-xxx-x-x---x--xx',
+            'x----x---x--x---x-x',
+            '-xx--x--x-x-xxx-xxx',
+        ];
+    }
 
+    let y = 0;
+    let textColor = new Color(255, 127, 0);
+    for (let line of text.reverse()) {
+        let x = 0;
+        for (let c of line) {
+            if (c != '-') {
+                iso.add(Shape.Prism(new Point(-1.25, 3 - 0.2 * x, 0.2 * y), 0.2, 0.2, 0.2), textColor);
+            }
+            x++;
+        }
+        y++;
+    }
+};
+
+const draw = function () {
     requestAnimationFrame(draw);
+    iso.canvas.ctx.clearRect(0, 0, iso.canvas.width, iso.canvas.height);
+    drawFrame(iso);
+    drawFrame(isoGL, true);
+    isoGL.draw();
 };
 
 draw();
 
+document.querySelector('#cmp-btn').addEventListener('click', e => {
+    if (document.body.classList.contains('cmp')) {
+        document.body.classList.remove('cmp');
+    } else {
+        document.body.classList.add('cmp');
+    }
+});

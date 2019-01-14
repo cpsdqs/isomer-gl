@@ -1,4 +1,12 @@
 # isomer-gl
-rewrite of https://github.com/jdan/isomer using WebGL (half of this is just more or less copy-pasted)
+https://github.com/jdan/isomer WebGL Renderer
 
-API is nearly the same except that `Isomer` is called `IsomerGL`, and `draw()` must be called on the `IsomerGL` instance for anything to be drawn.
+```javascript
+const iso = new IsomerGL(document.querySelector('#canvas'));
+
+iso.add(Isomer.Shape.Prism(new Isomer.Point()))
+// ...
+
+// renderer does not draw immediately
+iso.draw();
+```

@@ -1,0 +1,22 @@
+#c, #cgl {
+    position: absolute;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+#cgl {
+    transform: translateX(100%);
+}
+
+body.cmp #c,
+body.cmp #cgl {
+    opacity: 0.5;
+}
+
+body.cmp #cgl {
+    transform: none;
+}
+
+#cmp-btn {
+    position: relative;
+    z-index: 1;
+}

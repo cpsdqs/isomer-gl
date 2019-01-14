@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        'isomer-gl': './src',
+        'isomer-gl': '.',
     },
     output: {
         library: 'IsomerGL',

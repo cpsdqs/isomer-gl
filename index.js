@@ -2,11 +2,29 @@ const mat4 = require('gl-mat4');
 const vec3 = require('gl-vec3');
 const libtess = require('libtess');
 const createShader = require('gl-shader');
-const Color = require('./color');
-const Shape = require('./shape');
-const Path = require('./path');
+const { Color, Shape, Path, Vector } = global.Isomer;
 
-module.exports = class IsomerGL {
+const point2vec = point => {
+    const vec = new Float32Array(3);
+    vec[0] = point.x;
+    vec[1] = point.y;
+    vec[2] = point.z;
+    return vec;
+};
+
+const vector2vec = point => {
+    const vec = new Float32Array(3);
+    vec[0] = point.i;
+    vec[1] = point.j;
+    vec[2] = point.k;
+    return vec;
+};
+
+const normalizeColor = color => {
+    return [color.r / 255, color.g / 255, color.b / 255, color.a];
+};
+
+module.exports = global.IsomerGL = class IsomerGL {
     constructor (canvas, options = {}) {
         this.canvas = canvas;
         this.gl = canvas.getContext('webgl');
@@ -22,9 +40,8 @@ module.exports = class IsomerGL {
         this.clipNear = -100;
         this.clipFar = 100;
 
-        this.lightPosition = options.lightPosition || [2, 3, -1];
-        this.lightAngle = vec3.create();
-        vec3.normalize(this.lightAngle, this.lightPosition);
+        this.lightPosition = options.lightPosition || new Vector(2, -1, 3);
+        this.lightAngle = this.lightPosition.normalize();
 
         this.colorDifference = 0.2;
         this.lightColor = options.lightColor || new Color(255, 255, 255);
@@ -83,8 +100,9 @@ void main() {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         const transform = mat4.create();
-        const width = this.canvas.width / this.scale;
-        const height = this.canvas.height / this.scale;
+        // no idea why, but Isomer has a 9/11 scaling factor
+        const width = this.canvas.width / this.scale * 9 / 11;
+        const height = this.canvas.height / this.scale * 9 / 11;
         // orthographic projection matrix
         mat4.ortho(transform, width / 2, -width / 2, -height / 2, height / 2, this.clipNear, this.clipFar);
 
@@ -131,7 +149,10 @@ void main() {
         let points = [];
         tess.gluTessBeginPolygon(points);
         tess.gluTessBeginContour();
-        for (const point of path.points) tess.gluTessVertex(point, point);
+        for (const point of path.points) {
+            const p = point2vec(point);
+            tess.gluTessVertex(p, p);
+        }
         tess.gluTessEndContour();
         tess.gluTessEndPolygon();
 
@@ -146,14 +167,13 @@ void main() {
         // calculate color
         const v1 = vec3.create();
         const v2 = vec3.create();
-        let swapYZ = v => [v[0], v[2], v[1]];
-        vec3.sub(v1, swapYZ(path.points[0]), swapYZ(path.points[1]));
-        vec3.sub(v2, swapYZ(path.points[2]), swapYZ(path.points[1]));
+        vec3.sub(v1, point2vec(path.points[0]), point2vec(path.points[1]));
+        vec3.sub(v2, point2vec(path.points[1]), point2vec(path.points[2]));
         const normal = vec3.normalize(vec3.create(), vec3.cross(vec3.create(), v1, v2));
-        const brightness = vec3.dot(normal, this.lightAngle);
+        const brightness = vec3.dot(normal, vector2vec(this.lightAngle));
         const color = baseColor.lighten(brightness * this.colorDifference, this.lightColor);
 
-        shader.uniforms.color = color.normalized();
+        shader.uniforms.color = normalizeColor(color);
 
         const verts = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, verts);
